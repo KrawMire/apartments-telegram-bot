@@ -1,0 +1,16 @@
+version: '0.0.1'
+
+services:
+  parser_service:
+    build:
+      context: apartments_parser/
+      dockerfile: Dockerfile
+    ports:
+      - "5000:5000"
+
+  tg_bot_service:
+    build:
+      context: telegram-bot-service/
+      dockerfile: build/Dockerfile
+    depends_on:
+      - parser_service

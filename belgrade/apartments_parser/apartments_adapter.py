@@ -16,7 +16,7 @@ class Apartment:
 class ApartmentsAdapter:
     def get_apartments(self) -> list[Apartment]:
         response = requests.get('https://www.halooglasi.com/nekretnine/izdavanje-stanova/beograd',
-                                headers={'User-Agent': 'Mozilla/5.0'})
+                                headers={'User-Agent': 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/123.0.0.0 Safari/537.36'})
         bs = BeautifulSoup(response.text, 'html.parser')
         apartments: list[Apartment] = []
 

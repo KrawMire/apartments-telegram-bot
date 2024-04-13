@@ -1,13 +1,12 @@
 from flask import Flask, jsonify
-
 from apartments_adapter import ApartmentsAdapter
 
 app = Flask(__name__)
+adapter = ApartmentsAdapter()
 
 
 @app.route('/apartments-get', methods=['GET'])
 def get_apartments():
-    adapter = ApartmentsAdapter()
     apartments = adapter.get_apartments()
     res = []
 

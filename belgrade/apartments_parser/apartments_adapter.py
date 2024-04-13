@@ -51,6 +51,8 @@ class ApartmentsAdapter:
             except:
                 continue
 
+        self.processed_apartments_ids.clear()
+
         for processed_id in processed_ids:
             self.processed_apartments_ids.append(processed_id)
 

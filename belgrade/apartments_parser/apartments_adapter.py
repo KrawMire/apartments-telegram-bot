@@ -51,9 +51,10 @@ class ApartmentsAdapter:
             except:
                 continue
 
+        new_processed_ids = (processed_ids + self.processed_apartments_ids)[:100]
         self.processed_apartments_ids.clear()
 
-        for processed_id in processed_ids:
+        for processed_id in new_processed_ids:
             self.processed_apartments_ids.append(processed_id)
 
         return apartments

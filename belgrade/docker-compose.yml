@@ -1,16 +1,35 @@
 version: '0.0.1'
 
 services:
+  rabbitmq_service:
+    image: rabbitmq:3-alpine
+    container_name: 'rabbitmq'
+    ports:
+        - 5672:5672
+    networks:
+        - main_network
+
   parser_service:
     build:
       context: apartments_parser/
       dockerfile: Dockerfile
-    ports:
-      - "5000:5000"
+    depends_on:
+      - rabbitmq_service
+    networks:
+      - main_network
 
   tg_bot_service:
     build:
       context: telegram-bot-service/
       dockerfile: build/Dockerfile
+    logging:
+      options:
+
     depends_on:
-      - parser_service
+      - rabbitmq_service
+    networks:
+      - main_network
+
+networks:
+  main_network:
+    driver: bridge

@@ -1,3 +1,5 @@
+from typing import Iterator
+
 import requests
 from bs4 import BeautifulSoup, PageElement
 from datetime import date, timedelta
@@ -20,9 +22,9 @@ class ApartmentsAdapter:
         self.processed_apartments_ids: dict[str, bool] = {}
         self.request_headers = {'User-Agent': 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 ('
                                               'KHTML, like Gecko) Chrome/123.0.0.0 Safari/537.36'}
-        self.max_pages = 70
+        self.max_pages = 100
 
-    def get_apartments(self) -> list[Apartment]:
+    def get_apartments(self) -> Iterator[list[Apartment]]:
         processed_ids: list[str] = []
         apartments: list[Apartment] = []
 
@@ -30,10 +32,10 @@ class ApartmentsAdapter:
         date_before = (date.today() - timedelta(days=1)).strftime('%d.%m.%Y')
 
         for page in range(1, self.max_pages):
+            apartments.clear()
             response = requests.get(
                 'https://www.halooglasi.com/nekretnine/izdavanje-stanova/beograd?page=' + str(page),
                 headers=self.request_headers)
-
             bs = BeautifulSoup(response.text, 'html.parser')
 
             for apart_block in bs.find_all('div', {'class': 'product-item'}):
@@ -47,7 +49,7 @@ class ApartmentsAdapter:
                         continue
 
                     if self.processed_apartments_ids.get(apartment_id):
-                        break
+                        continue
 
                     apartment.id = apartment_id
                     apartment.date_published = date_published
@@ -59,18 +61,21 @@ class ApartmentsAdapter:
                     apartment.features = self.__get_apartment_features(apart_block)
                     apartment.link = self.__get_apartment_link(apart_block)
 
-                    apartments.append(apartment)
+                    if len(self.processed_apartments_ids.keys()) != 0:
+                        apartments.append(apartment)
+
                     processed_ids.append(apartment_id)
                 except:
                     continue
 
-        new_processed_ids = (processed_ids + list(self.processed_apartments_ids.keys()))[:1000]
+            print('Processed page #{0}'.format(page))
+            yield apartments
+
+        new_processed_ids = (processed_ids + list(self.processed_apartments_ids.keys()))[:3000]
         self.processed_apartments_ids.clear()
 
         for processed_id in new_processed_ids:
             self.processed_apartments_ids[processed_id] = True
-
-        return apartments
 
     @staticmethod
     def __get_apartment_id(apart_block: PageElement) -> str:

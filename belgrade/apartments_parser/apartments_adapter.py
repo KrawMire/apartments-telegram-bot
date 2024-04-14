@@ -1,5 +1,6 @@
 import requests
 from bs4 import BeautifulSoup, PageElement
+from datetime import date, timedelta
 
 
 class Apartment:
@@ -16,46 +17,58 @@ class Apartment:
 
 class ApartmentsAdapter:
     def __init__(self):
-        self.processed_apartments_ids: list[str] = []
+        self.processed_apartments_ids: dict[str, bool] = {}
+        self.request_headers = {'User-Agent': 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 ('
+                                              'KHTML, like Gecko) Chrome/123.0.0.0 Safari/537.36'}
+        self.max_pages = 70
 
     def get_apartments(self) -> list[Apartment]:
-        response = requests.get('https://www.halooglasi.com/nekretnine/izdavanje-stanova/beograd',
-                                headers={
-                                    'User-Agent': 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/123.0.0.0 Safari/537.36'})
-
-        bs = BeautifulSoup(response.text, 'html.parser')
         processed_ids: list[str] = []
         apartments: list[Apartment] = []
 
-        for apart_block in bs.find_all('div', {'class': 'product-item'}):
-            apartment = Apartment()
+        current_date = date.today().strftime('%d.%m.%Y')
+        date_before = (date.today() - timedelta(days=1)).strftime('%d.%m.%Y')
 
-            try:
-                apartment_id = self.__get_apartment_id(apart_block)
+        for page in range(1, self.max_pages):
+            response = requests.get(
+                'https://www.halooglasi.com/nekretnine/izdavanje-stanova/beograd?page=' + str(page),
+                headers=self.request_headers)
 
-                if any(apartment_id == processed_id for processed_id in self.processed_apartments_ids):
-                    break
+            bs = BeautifulSoup(response.text, 'html.parser')
 
-                apartment.id = apartment_id
-                apartment.title = self.__get_apartment_title(apart_block)
-                apartment.description = self.__get_apartment_description(apart_block)
-                apartment.placement = self.__get_apartment_placement(apart_block)
-                apartment.price = self.__get_apartment_price(apart_block)
-                apartment.owner = self.__get_apartment_owner(apart_block)
-                apartment.date_published = self.__get_apartment_publish_date(apart_block)
-                apartment.features = self.__get_apartment_features(apart_block)
-                apartment.link = self.__get_apartment_link(apart_block)
+            for apart_block in bs.find_all('div', {'class': 'product-item'}):
+                apartment = Apartment()
 
-                apartments.append(apartment)
-                processed_ids.append(apartment_id)
-            except:
-                continue
+                try:
+                    apartment_id = self.__get_apartment_id(apart_block)
+                    date_published = self.__get_apartment_publish_date(apart_block)
 
-        new_processed_ids = (processed_ids + self.processed_apartments_ids)[:100]
+                    if date_published != current_date and date_published != date_before:
+                        continue
+
+                    if self.processed_apartments_ids.get(apartment_id):
+                        break
+
+                    apartment.id = apartment_id
+                    apartment.date_published = date_published
+                    apartment.title = self.__get_apartment_title(apart_block)
+                    apartment.description = self.__get_apartment_description(apart_block)
+                    apartment.placement = self.__get_apartment_placement(apart_block)
+                    apartment.price = self.__get_apartment_price(apart_block)
+                    apartment.owner = self.__get_apartment_owner(apart_block)
+                    apartment.features = self.__get_apartment_features(apart_block)
+                    apartment.link = self.__get_apartment_link(apart_block)
+
+                    apartments.append(apartment)
+                    processed_ids.append(apartment_id)
+                except:
+                    continue
+
+        new_processed_ids = (processed_ids + list(self.processed_apartments_ids.keys()))[:1000]
         self.processed_apartments_ids.clear()
 
         for processed_id in new_processed_ids:
-            self.processed_apartments_ids.append(processed_id)
+            self.processed_apartments_ids[processed_id] = True
 
         return apartments
 

@@ -1,3 +1,4 @@
+import logging
 from flask import Flask, jsonify
 from apartments_adapter import ApartmentsAdapter
 
@@ -22,8 +23,9 @@ def get_apartments():
             'features': apartment.features
         })
 
+    logging.info('Returned ' + str(len(apartments)) + ' apartments')
     return jsonify(res)
 
 
 if __name__ == '__main__':
-    app.run(debug=False, port=5000)
+    app.run(debug=True, port=5000)

@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"net/http"
 	"telegram-bot-service/internal/models"
+	"time"
 )
 
 type ApartmentsAdapter struct {
@@ -17,7 +18,10 @@ func NewApartmentsAdapter(host string) *ApartmentsAdapter {
 }
 
 func (a *ApartmentsAdapter) GetApartments() ([]models.Apartment, error) {
-	resp, err := http.Get(a.host + "/apartments-get")
+	client := &http.Client{
+		Timeout: time.Second * 90,
+	}
+	resp, err := client.Get(a.host + "/apartments-get")
 	if err != nil {
 		return nil, err
 	}

@@ -58,8 +58,8 @@ def main():
                 data = json.dumps(batch)
                 send_new_apartments(data)
                 print('Sent new batch of ' + str(len(batch)) + 'new apartments')
-        except:
-            pass
+        except Exception as e:
+            print("Exception occurred for whole parsing process: " + str(e))
 
         time.sleep(600)
 

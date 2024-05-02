@@ -33,7 +33,6 @@ class ApartmentsAdapter:
 
         for page in range(1, self.max_pages):
             apartments.clear()
-            response = None
 
             try:
                 response = requests.get(
@@ -42,6 +41,7 @@ class ApartmentsAdapter:
                     timeout=15)
             except Exception as e:
                 print('An error occurred while getting page: ' + str(e))
+                continue
 
             bs = BeautifulSoup(response.text, 'html.parser')
 
@@ -74,6 +74,7 @@ class ApartmentsAdapter:
                     processed_ids.append(apartment_id)
                 except Exception as err:
                     print('An error occurred while parsing page: ' + str(err))
+                    continue
 
             print('Processed page #{0}'.format(page))
             yield apartments

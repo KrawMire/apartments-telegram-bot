@@ -33,9 +33,16 @@ class ApartmentsAdapter:
 
         for page in range(1, self.max_pages):
             apartments.clear()
-            response = requests.get(
-                'https://www.halooglasi.com/nekretnine/izdavanje-stanova/beograd?page=' + str(page),
-                headers=self.request_headers)
+            response = None
+
+            try:
+                response = requests.get(
+                    'https://www.halooglasi.com/nekretnine/izdavanje-stanova/beograd?page=' + str(page),
+                    headers=self.request_headers,
+                    timeout=15)
+            except Exception as e:
+                print('An error occurred while getting page: ' + str(e))
+
             bs = BeautifulSoup(response.text, 'html.parser')
 
             for apart_block in bs.find_all('div', {'class': 'product-item'}):
@@ -65,8 +72,8 @@ class ApartmentsAdapter:
                         apartments.append(apartment)
 
                     processed_ids.append(apartment_id)
-                except:
-                    continue
+                except Exception as err:
+                    print('An error occurred while parsing page: ' + str(err))
 
             print('Processed page #{0}'.format(page))
             yield apartments

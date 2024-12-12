@@ -22,9 +22,6 @@ services:
     build:
       context: telegram-bot-service/
       dockerfile: build/Dockerfile
-    logging:
-      options:
-
     depends_on:
       - rabbitmq_service
     networks:

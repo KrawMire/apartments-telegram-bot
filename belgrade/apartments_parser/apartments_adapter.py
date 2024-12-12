@@ -1,6 +1,7 @@
-from typing import Iterator
-
 import requests
+import logging
+
+from typing import Iterator
 from bs4 import BeautifulSoup, PageElement
 from datetime import date, timedelta
 
@@ -19,10 +20,11 @@ class Apartment:
 
 class ApartmentsAdapter:
     def __init__(self):
-        self.processed_apartments_ids: dict[str, bool] = {}
-        self.request_headers = {'User-Agent': 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 ('
-                                              'KHTML, like Gecko) Chrome/123.0.0.0 Safari/537.36'}
         self.max_pages = 100
+        self.processed_apartments_ids: dict[str, bool] = {}
+        self.request_headers = {
+            'User-Agent': 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/123.0.0.0 Safari/537.36'
+        }
 
     def get_apartments(self) -> Iterator[list[Apartment]]:
         processed_ids: list[str] = []
@@ -38,9 +40,9 @@ class ApartmentsAdapter:
                 response = requests.get(
                     'https://www.halooglasi.com/nekretnine/izdavanje-stanova/beograd?page=' + str(page),
                     headers=self.request_headers,
-                    timeout=15)
+                    timeout=10)
             except Exception as e:
-                print('An error occurred while getting page: ' + str(e))
+                logging.error('An error occurred while getting page: ' + str(e))
                 continue
 
             bs = BeautifulSoup(response.text, 'html.parser')
@@ -50,6 +52,10 @@ class ApartmentsAdapter:
 
                 try:
                     apartment_id = self.__get_apartment_id(apart_block)
+
+                    if apartment_id is None:
+                        continue
+
                     date_published = self.__get_apartment_publish_date(apart_block)
 
                     if date_published != current_date and date_published != date_before:
@@ -68,26 +74,28 @@ class ApartmentsAdapter:
                     apartment.features = self.__get_apartment_features(apart_block)
                     apartment.link = self.__get_apartment_link(apart_block)
 
-                    if len(self.processed_apartments_ids.keys()) != 0:
-                        apartments.append(apartment)
-
+                    # if len(self.processed_apartments_ids.keys()) != 0:
+                    apartments.append(apartment)
                     processed_ids.append(apartment_id)
                 except Exception as err:
-                    print('An error occurred while parsing page: ' + str(err))
+                    logging.exception(err)
                     continue
 
-            print('Processed page #{0}'.format(page))
+            new_processed_ids = (processed_ids + list(self.processed_apartments_ids.keys()))[:3000]
+            self.processed_apartments_ids.clear()
+
+            for processed_id in new_processed_ids:
+                self.processed_apartments_ids[processed_id] = True
+
+            logging.info('Processed page #' + str(page))
             yield apartments
 
-        new_processed_ids = (processed_ids + list(self.processed_apartments_ids.keys()))[:3000]
-        self.processed_apartments_ids.clear()
-
-        for processed_id in new_processed_ids:
-            self.processed_apartments_ids[processed_id] = True
-
     @staticmethod
-    def __get_apartment_id(apart_block: PageElement) -> str:
-        return apart_block.attrs["data-id"]
+    def __get_apartment_id(apart_block: PageElement) -> str | None:
+        if apart_block.attrs.get("data-id"):
+            return apart_block.attrs["data-id"]
+
+        return None
 
     @staticmethod
     def __get_apartment_title(apart_block: PageElement) -> str:
@@ -96,8 +104,12 @@ class ApartmentsAdapter:
 
     @staticmethod
     def __get_apartment_description(apart_block: PageElement) -> str:
-        description_wrapper = apart_block.find_all_next('p', {'class': 'product-description'})[0]
-        return description_wrapper.text
+        descriptions = apart_block.find_all_next('p', {'class': 'product-description'})
+
+        if (len(descriptions) < 1):
+            return ''
+
+        return descriptions[0].text
 
     @staticmethod
     def __get_apartment_link(apart_block: PageElement) -> str:

@@ -1,9 +1,9 @@
 import json
 import time
-from typing import Iterator
-
 import pika
 import logging
+
+from typing import Iterator
 from apartments_adapter import ApartmentsAdapter
 
 adapter = ApartmentsAdapter()
@@ -46,20 +46,27 @@ def send_new_apartments(data: str):
             logging.error(e)
             time.sleep(5)
 
+def send_new_apartments_mock(data: str):
+    logging.debug('Apartments result: ' + data)
+
 
 def main():
+    logging.basicConfig(
+        format='[%(levelname)s] %(asctime)s : %(message)s',
+        level=logging.INFO)
+
     while True:
         try:
             for batch in get_new_apartments():
                 if len(batch) == 0:
-                    print('No new apartments were found')
+                    logging.info('No new apartments were found')
                     continue
 
                 data = json.dumps(batch)
                 send_new_apartments(data)
-                print('Sent new batch of ' + str(len(batch)) + 'new apartments')
+                logging.info('Sent new batch of ' + str(len(batch)) + ' new apartments')
         except Exception as e:
-            print("Exception occurred for whole parsing process: " + str(e))
+            logging.error("Exception occurred for whole parsing process: " + str(e))
 
         time.sleep(600)
 

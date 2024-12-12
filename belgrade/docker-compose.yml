@@ -2,8 +2,6 @@ services:
   rabbitmq_service:
     image: rabbitmq:3-alpine
     container_name: 'rabbitmq'
-    ports:
-        - 5672:5672
     networks:
         - main_network
 

@@ -74,8 +74,9 @@ class ApartmentsAdapter:
                     apartment.features = self.__get_apartment_features(apart_block)
                     apartment.link = self.__get_apartment_link(apart_block)
 
-                    # if len(self.processed_apartments_ids.keys()) != 0:
-                    apartments.append(apartment)
+                    if len(self.processed_apartments_ids.keys()) != 0:
+                        apartments.append(apartment)
+
                     processed_ids.append(apartment_id)
                 except Exception as err:
                     logging.exception(err)

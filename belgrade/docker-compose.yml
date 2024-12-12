@@ -1,5 +1,3 @@
-version: '0.0.1'
-
 services:
   rabbitmq_service:
     image: rabbitmq:3-alpine
